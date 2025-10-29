@@ -1,6 +1,6 @@
 import os
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
-from livekit.plugins import openai, deepgram, elevenlabs, silero
+from livekit.plugins import openai, deepgram, silero
 
 class MyAgent(Agent):
     def __init__(self):
@@ -17,23 +17,19 @@ async def entrypoint(ctx: JobContext):
     await ctx.connect()
 
     session = AgentSession(
-        # 🔊 كشف الكلام منخفض التردد للهاتف
         vad=silero.VAD.load(sample_rate=8000),
-        # 🗣️ محرك تفريغ الكلام مناسب للهاتف
         stt=deepgram.STT(
-            model="nova-2-general",  # أدق للهجة، وأخف من nova-3
+            model="nova-2-general",
             sample_rate=8000
         ),
-        # 💬 نموذج نصي سريع الفهم
         llm=openai.LLM(model="gpt-4o-mini"),
-        # 🎧 صوت ElevenLabs مضبوط للمكالمات
-        tts=elevenlabs.TTS(
-            voice_id="alloy",
-            model="eleven_turbo_v2",
-            output_format="ulaw_8000",       # مهم جدًا للهاتف
-            optimize_streaming_latency=True  # يقلل التأخير
+        # ✅ استبدل ElevenLabs بـ OpenAI STS
+        tts=openai.TTS(
+            model="gpt-4o-mini-tts",   # نموذج صوتي فوري من OpenAI
+            voice="alloy",             # أو "verse", "calm"
+            format="ulaw_8000"         # لضبطه على تردد الهاتف
         ),
-        stream_mode="low_latency",           # يبث مباشرة
+        stream_mode="low_latency"
     )
 
     await session.start(agent=MyAgent(), room=ctx.room)
