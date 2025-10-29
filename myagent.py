@@ -21,5 +21,5 @@ async def entrypoint(ctx: JobContext):
 
 if __name__ == "__main__":
     cli.run_app(
-        WorkerOptions(entrypoint_fnc=entrypoint, agent_name="muammal-voice-agent")
+        WorkerOptions(entrypoint_fnc=entrypoint, agent_name="my-telephony-agent")
     )
