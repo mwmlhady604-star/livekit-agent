@@ -1,17 +1,34 @@
 import os
+import asyncio
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
 from livekit.plugins import openai, deepgram, silero
 
 class MyAgent(Agent):
     def __init__(self):
         super().__init__(
-            instructions="أنت وكيل صوتي ودود يتحدث باللهجة العراقية والفصحى، تجاوب بسرعة وبأسلوب طبيعي."
+            instructions=(
+                "أنت وكيل صوتي ودود باللهجة العراقية والفصحى. "
+                "رد بسرعة أولاً بجواب قصير ثم أضف تفصيل لاحقاً إن لزم."
+            )
         )
 
     async def on_enter(self):
-        await self.session.generate_reply(
-            instructions="هلا بيك! شلونك؟ شنو تحتاج اليوم؟"
-        )
+        await self.session.generate_reply("هلا بيك! شلونك؟ شنو تحتاج اليوم؟")
+
+    async def handle_message(self, message: str):
+        """رد سريع (SLM) ثم رد تفصيلي (LLM)"""
+        fast_llm = openai.LLM(model="gpt-4o-mini")
+        slow_llm = openai.LLM(model="gpt-4o")
+
+        async def fast_reply():
+            async for chunk in fast_llm.chat(message).to_str_iterable():
+                await self.session.say(chunk, add_to_chat_ctx=False)
+
+        async def slow_reply():
+            final_text = await slow_llm.chat(message).to_text()
+            await self.session.say(final_text)
+
+        await asyncio.gather(fast_reply(), slow_reply())
 
 async def entrypoint(ctx: JobContext):
     await ctx.connect()
@@ -20,16 +37,17 @@ async def entrypoint(ctx: JobContext):
         vad=silero.VAD.load(sample_rate=8000),
         stt=deepgram.STT(
             model="nova-2-general",
-            sample_rate=8000
+            sample_rate=8000,
+            interim_results=True  # ✅ يبدأ قبل اكتمال الجملة
         ),
         llm=openai.LLM(model="gpt-4o-mini"),
-        # ✅ استبدل ElevenLabs بـ OpenAI STS
         tts=openai.TTS(
-            model="gpt-4o-mini-tts",   # نموذج صوتي فوري من OpenAI
-            voice="alloy",             # أو "verse", "calm"
-            format="ulaw_8000"         # لضبطه على تردد الهاتف
+            model="gpt-4o-mini-tts",
+            voice="alloy",
+            format="ulaw_8000"
         ),
-        stream_mode="low_latency"
+        stream_mode="low_latency",
+        adaptive_streaming=True
     )
 
     await session.start(agent=MyAgent(), room=ctx.room)
