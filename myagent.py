@@ -11,22 +11,21 @@ class MyAgent(Agent):
 
 async def entrypoint(ctx: JobContext):
     await ctx.connect()
+
     session = AgentSession(
         vad=silero.VAD.load(),
         stt=deepgram.STT(model="nova-3"),
         llm=openai.LLM(model="gpt-4o-mini"),
         tts=elevenlabs.TTS(
-            options=elevenlabs.TTSOptions(
-                voice_id="alloy",
-                format="ulaw_8000",
-                optimize_streaming_latency=True
-            )
+            voice_id="alloy",             # الصوت المطلوب
+            model="eleven_turbo_v2",      # طراز ElevenLabs الحديث
+            optimize_streaming_latency=True,
+            output_format="ulaw_8000"     # يطابق G.711 للهاتف
         ),
         stream_mode="low_latency",
     )
-    await session.start(agent=MyAgent(), room=ctx.room)
 
-    # إبقاء العملية حيّة بعد البدء
+    await session.start(agent=MyAgent(), room=ctx.room)
     await ctx.run_forever()
 
 if __name__ == "__main__":
