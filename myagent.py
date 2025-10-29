@@ -15,7 +15,12 @@ async def entrypoint(ctx: JobContext):
         vad=silero.VAD.load(),
         stt=deepgram.STT(model="nova-3"),
         llm=openai.LLM(model="gpt-4o-mini"),
-        tts=elevenlabs.TTS(),
+        tts=elevenlabs.TTS(
+            voice="alloy",
+            format="ulaw_8000",
+            optimize_streaming_latency=True
+        ),
+        stream_mode="low_latency",
     )
     await session.start(agent=MyAgent(), room=ctx.room)
 
