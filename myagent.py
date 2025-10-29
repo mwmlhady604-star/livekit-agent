@@ -16,7 +16,6 @@ class MyAgent(Agent):
         await self.session.generate_reply("هلا بيك! شلونك؟ شنو تحتاج اليوم؟")
 
     async def handle_message(self, message: str):
-        """رد سريع (SLM) ثم رد تفصيلي (LLM)"""
         fast_llm = openai.LLM(model="gpt-4o-mini")
         slow_llm = openai.LLM(model="gpt-4o")
 
@@ -38,13 +37,12 @@ async def entrypoint(ctx: JobContext):
         stt=deepgram.STT(
             model="nova-2-general",
             sample_rate=8000,
-            interim_results=True  # ✅ يبدأ قبل اكتمال الجملة
+            interim_results=True
         ),
         llm=openai.LLM(model="gpt-4o-mini"),
         tts=openai.TTS(
             model="gpt-4o-mini-tts",
-            voice="alloy",
-            format="ulaw_8000"
+            voice="alloy"          # ← تمت إزالة "format"
         ),
         stream_mode="low_latency",
         adaptive_streaming=True
