@@ -16,11 +16,13 @@ async def entrypoint(ctx: JobContext):
         stt=deepgram.STT(model="nova-3"),
         llm=openai.LLM(model="gpt-4o-mini"),
         tts=elevenlabs.TTS(
-            voice="alloy",
-            format="ulaw_8000",
-            optimize_streaming_latency=True
+            options=elevenlabs.TTSOptions(
+                voice_id="alloy",               # الصوت المطلوب
+                format="ulaw_8000",             # التوافق مع المكالمات الهاتفية
+                optimize_streaming_latency=True # لتقليل التأخير
+            )
         ),
-        stream_mode="low_latency",
+        stream_mode="low_latency",              # استجابة أسرع
     )
     await session.start(agent=MyAgent(), room=ctx.room)
 
