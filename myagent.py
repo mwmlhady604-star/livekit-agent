@@ -17,14 +17,17 @@ async def entrypoint(ctx: JobContext):
         llm=openai.LLM(model="gpt-4o-mini"),
         tts=elevenlabs.TTS(
             options=elevenlabs.TTSOptions(
-                voice_id="alloy",               # الصوت المطلوب
-                format="ulaw_8000",             # التوافق مع المكالمات الهاتفية
-                optimize_streaming_latency=True # لتقليل التأخير
+                voice_id="alloy",
+                format="ulaw_8000",
+                optimize_streaming_latency=True
             )
         ),
-        stream_mode="low_latency",              # استجابة أسرع
+        stream_mode="low_latency",
     )
     await session.start(agent=MyAgent(), room=ctx.room)
+
+    # إبقاء العملية حيّة بعد البدء
+    await ctx.run_forever()
 
 if __name__ == "__main__":
     cli.run_app(
